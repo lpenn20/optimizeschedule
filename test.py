@@ -2,25 +2,29 @@ from collections import deque
 from locations import location
 # time = minutes after 12 AM
 
-def dist(loc1, loc2):
+def dist(loc1, loc2): # distance between two coordinates -- * 70 because small values
     return 70 * (abs(loc2[0] - loc1[0]) + abs(loc2[1] - loc1[1]))
 
 def weight_path(locations, start_loc, end_loc, time, hungry):
-    # if times dont work, return -1 or -2
-    # favors min distances and restaurants if hungry is true
+    # find the weight of the distance
     dist_weight = dist(start_loc.loc, end_loc.loc) * 50
     time_weight = 0
+    # return -1 if the open time is later than the time
     if (time <= end_loc.open_time):
         return -1
+    # return -2 if the close time is earlier than the time
     if (time + end_loc.avg_time >= end_loc.close_time):
         return -2
+    # reduce weight if the person is hungry
     if hungry and 'food' in end_loc.category:
       dist_weight = dist_weight//5
+    # if the person is hungry and the desired location is not a restaurant, increase the weight
     if not hungry and 'food' in end_loc.category or hungry and 'food' not in end_loc.category:
       dist_weight = dist_weight*5
     return dist_weight + time_weight
 
 def remove_from_dict(dict, n):
+    # used to remove every instance of a location from the location dictionary
     result = {}
     currentList = []
     x = n[0]
@@ -43,9 +47,7 @@ def remove_from_dict(dict, n):
     return result
 
 def nearest_n(locations, loc, n):
-    """
-    Return the n nearest locations to 'loc'.
-    """
+    # return the n nearest locations to the loc.
     nearest = []
     for l in locations:
         if l != loc:
@@ -56,12 +58,14 @@ def nearest_n(locations, loc, n):
     return [l for d, l in nearest[:n]]
 
 def create_nodes(locations, n):
+  # creates dictionary of locations
   output = {}
   for loc in locations:
     output[loc] = nearest_n(locations, loc, n)
   return output
 
 def find_paths(start, graph, n):
+    # finds all possible paths of length n
     paths = []
     queue = deque([(start, [start])])
     while queue:
@@ -72,7 +76,6 @@ def find_paths(start, graph, n):
             new_path = path + [neighbor]
             paths.append(new_path)
             queue.append((neighbor, new_path))
- 
     return [path for path in paths if len(path) == n+1]
 
 def best_path(start, graph, n, start_time, downtime):
@@ -86,6 +89,7 @@ def best_path(start, graph, n, start_time, downtime):
   arrival_times = []
   breaks = False
   for path in find_paths(start, graph, n):
+    # reset all variables
     arrival_times = []
     last_time_eaten = start_time
     hungry = True
@@ -94,29 +98,40 @@ def best_path(start, graph, n, start_time, downtime):
     temp_downtime = downtime
     breaks = False
     for i in range(len(path)-1):
+      # if it's been two hours since they've last eaten, make 'hungry' boolean true
       if time >= last_time_eaten + 120:
         hungry = True
+      # define the two locations to weigh
       start_loc = path[i]
       end_loc = path[i+1]
+      # make the weight between the paths
       weight = weight_path(graph, start_loc, end_loc, time, hungry)
+      # if the times don't work, see if there's available downtime to use
+      # if there is, use the downtime, if not, break the loop to not continue the path
       if weight == -1:
         if end_loc.open_time - time > temp_downtime:
           breaks = True
         else:
           temp_downtime -= (end_loc.open_time - time)
           time = end_loc.open_time
+      # if time is past closing time downtime can't be used -- path doesn't work
       if weight == -2:
         breaks = True
-      temp_weight += weight_path(graph, path[i], path[i+1], time, hungry)
+      # add this weight to the path's weight
+      temp_weight += weight
+      # if the place was a restaurant, make the 'hungry' boolean false and reset the last time eaten
       if 'food' in end_loc.category:
         hungry = False
         last_time_eaten = time
+      # add what time you arrived to the location
       arrival_times.append(time)
       time += path[i+1].avg_time
+    # if the times work, add everything to the weights list
     if not breaks:
         weights.append((temp_weight, path, time, downtime - temp_downtime, arrival_times.copy()))
   n = 0
   output = []
+  # output the 3 lowest weighted paths
   for v, path, time, downtime_used, arrival_times in sorted(weights, key=lambda weights: weights[0]):
     if n >= 3:
       break
@@ -125,10 +140,13 @@ def best_path(start, graph, n, start_time, downtime):
   return output
 
 def best_path2(start, graph, days, start_time, downtime):
+  # does the best_path for each day
   output = []
   path_length = len(graph)//days
   for i in range(days):
+    # loops best_path for each day
     path_ = best_path(start, graph, path_length, start_time, downtime)
+    # if the path doesn't work, end loop and return output
     if not path_:
       break
     else:
@@ -204,3 +222,5 @@ for path in x:
     print('finishing time =', path[2])
     print('arrival times =', path[4])
     print('\n')
+
+   
