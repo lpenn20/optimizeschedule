@@ -1,2 +1,2 @@
-- locations.py - intializies the class location that contains information about that place
-- test.py - creates a function to help plan an enjoyable and effecient trip with various locations, taking into account opening and closing times, hunger, average time spent at a location, and distance
+- locations.py - Intializies the class location that contains information about that place
+- test.py - Creates a function to help plan an enjoyable and effecient trip with various locations, taking into account opening and closing times, hunger, average time spent at a location, and distance
